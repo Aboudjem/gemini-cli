@@ -57,8 +57,8 @@ exports[`ThinkingMessage > renders multiple thinking messages sequentially corre
  │ explaining the plan in detail so that it wraps around the terminal display.
  │
  │ Refining approach
- │ And finally a third multiple line paragraph for the third thinking message
- │ to refine the solution.
+ │ And finally a third multiple line paragraph for the third thinking message to
+ │ refine the solution.
 "
 `;
 
@@ -74,8 +74,8 @@ exports[`ThinkingMessage > renders multiple thinking messages sequentially corre
  │ explaining the plan in detail so that it wraps around the terminal display.
  │
  │ Refining approach
- │ And finally a third multiple line paragraph for the third thinking message
- │ to refine the solution."
+ │ And finally a third multiple line paragraph for the third thinking message to
+ │ refine the solution."
 `;
 
 exports[`ThinkingMessage > renders subject line with vertical rule and "Thinking..." header 1`] = `
