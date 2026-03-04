@@ -152,6 +152,7 @@ export {
 
 export const LS_TOOL_NAME_LEGACY = 'list_directory'; // Just to be safe if anything used the old exported name directly
 
+export const SCHEDULE_WORK_TOOL_NAME = 'schedule_work';
 export const EDIT_TOOL_NAMES = new Set([EDIT_TOOL_NAME, WRITE_FILE_TOOL_NAME]);
 
 // Tool Display Names
@@ -234,6 +235,7 @@ export const ALL_BUILTIN_TOOL_NAMES = [
   TRACKER_LIST_TASKS_TOOL_NAME,
   TRACKER_ADD_DEPENDENCY_TOOL_NAME,
   TRACKER_VISUALIZE_TOOL_NAME,
+  SCHEDULE_WORK_TOOL_NAME,
 ] as const;
 
 /**
