@@ -198,164 +198,17 @@ export const Footer: React.FC = () => {
     (isFullErrorVerbosity || debugMode || isDevelopment);
   const displayVimMode = vimEnabled ? vimMode : undefined;
 
-  const hideSandboxStatus = settings.merged.ui.footer.hideSandboxStatus;
   const hideModelInfo = settings.merged.ui.footer.hideModelInfo;
+  const hideContextPercentage = settings.merged.ui.footer.hideContextPercentage;
 
-  // Experimental Multi-Row Layout Refinement
-  if (settings.merged.ui.footerLayoutRefresh) {
-    const showMemoryUsage = debugMode || settings.merged.ui.showMemoryUsage;
-    const hideContextPercentage =
-      settings.merged.ui.footer.hideContextPercentage;
+  const isExperimentalLayout = settings.merged.ui.footerLayoutRefresh === true;
 
-    const displayPath = shortenPath(
-      tildeifyPath(targetDir),
-      Math.max(terminalWidth / 2, 20),
-    );
-
-    return (
-      <Box
-        width={terminalWidth}
-        height={2}
-        flexShrink={0}
-        flexDirection="row"
-        justifyContent="space-between"
-        paddingX={1}
-        paddingTop={0}
-        paddingBottom={0}
-      >
-        <Box flexDirection="column" flexShrink={1} paddingRight={2}>
-          <Text color={theme.text.secondary} wrap="truncate-end">
-            /directory
-          </Text>
-          <Box flexDirection="row" alignItems="center">
-            <Text color={theme.text.primary} wrap="truncate-end">
-              {displayVimMode && (
-                <Text color={theme.text.secondary}>[{displayVimMode}] </Text>
-              )}
-              {displayPath}
-              {debugMode && (
-                <Text color={theme.status.error}>
-                  {' '}
-                  {' ' + (debugMessage || '--debug')}
-                </Text>
-              )}
-            </Text>
-            {uiState.showDebugProfiler && (
-              <Box marginLeft={1} flexShrink={0}>
-                <DebugProfiler />
-              </Box>
-            )}
-          </Box>
-        </Box>
-
-        {branchName && (
-          <Box flexDirection="column" flexShrink={0} paddingRight={2}>
-            <Text color={theme.text.secondary} wrap="truncate-end">
-              branch
-            </Text>
-            <Text color={theme.text.primary} wrap="truncate-end">
-              {branchName}
-            </Text>
-          </Box>
-        )}
-
-        {!hideSandboxStatus && (
-          <Box flexDirection="column" flexShrink={0} paddingRight={2}>
-            <Text color={theme.text.secondary} wrap="truncate-end">
-              sandbox
-            </Text>
-            {isTrustedFolder === false ? (
-              <Text color={theme.status.warning} wrap="truncate-end">
-                untrusted
-              </Text>
-            ) : process.env['SANDBOX'] &&
-              process.env['SANDBOX'] !== 'sandbox-exec' ? (
-              <Text color="green" wrap="truncate-end">
-                {process.env['SANDBOX'].replace(/^gemini-(?:cli-)?/, '')}
-              </Text>
-            ) : process.env['SANDBOX'] === 'sandbox-exec' ? (
-              <Text color={theme.status.warning} wrap="truncate-end">
-                macOS Seatbelt
-              </Text>
-            ) : (
-              <Text color={theme.status.error} wrap="truncate-end">
-                no sandbox
-              </Text>
-            )}
-          </Box>
-        )}
-
-        {!hideModelInfo && (
-          <Box flexDirection="column" flexShrink={0} paddingRight={2}>
-            <Text color={theme.text.secondary} wrap="truncate-end">
-              /model
-            </Text>
-            <Box flexDirection="row" alignItems="center">
-              <Text color={theme.text.primary} wrap="truncate-end">
-                {getDisplayString(model)}
-              </Text>
-              {corgiMode && <Text color={theme.status.error}> ▼(´ᴥ`)▼</Text>}
-            </Box>
-          </Box>
-        )}
-
-        {!hideModelInfo && !hideContextPercentage && (
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            paddingRight={showMemoryUsage || showErrorSummary ? 2 : 0}
-          >
-            <Text color={theme.text.secondary} wrap="truncate-end">
-              context
-            </Text>
-            <Box flexDirection="row">
-              <ContextUsageDisplay
-                promptTokenCount={promptTokenCount}
-                model={model}
-                terminalWidth={terminalWidth}
-              />
-              {quotaStats && (
-                <Text wrap="truncate-end">
-                  {' '}
-                  <QuotaDisplay
-                    remaining={quotaStats.remaining}
-                    limit={quotaStats.limit}
-                    resetTime={quotaStats.resetTime}
-                    terse={true}
-                  />
-                </Text>
-              )}
-            </Box>
-          </Box>
-        )}
-
-        {(showMemoryUsage || showErrorSummary) && (
-          <Box flexDirection="column" flexShrink={0}>
-            <Text color={theme.text.secondary} wrap="truncate-end">
-              session info
-            </Text>
-            <Box flexDirection="row">
-              {showMemoryUsage && <MemoryUsageDisplay />}
-              {showMemoryUsage && showErrorSummary && (
-                <Text color={theme.text.secondary}> · </Text>
-              )}
-              {showErrorSummary && (
-                <Box paddingLeft={0} flexShrink={0}>
-                  <ConsoleSummaryDisplay errorCount={errorCount} />
-                </Box>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
-    );
-  }
-
-  // --- Legacy / Configurable Layout (main branch architecture) ---
-  const itemsToRender =
+  const items =
     settings.merged.ui.footer.items ??
     deriveItemsFromLegacySettings(settings.merged);
-  const showLabels = settings.merged.ui.footer.showLabels !== false;
+
+  const showLabels =
+    isExperimentalLayout || settings.merged.ui.footer.showLabels !== false;
   const itemColor = showLabels ? theme.text.primary : theme.ui.comment;
 
   const potentialColumns: FooterColumn[] = [];
@@ -376,7 +229,7 @@ export const Footer: React.FC = () => {
     });
   };
 
-  // 1. System Indicators (Far Left, high priority)
+  // 1. System Indicators
   if (uiState.showDebugProfiler) {
     addCol('debug', '', () => <DebugProfiler />, 45, true);
   }
@@ -391,8 +244,8 @@ export const Footer: React.FC = () => {
     );
   }
 
-  // 2. Main Configurable Items
-  for (const id of itemsToRender) {
+  // 2. Configurable Items from settings
+  for (const id of items) {
     if (!isFooterItemId(id)) continue;
     const itemConfig = ALL_ITEMS.find((i) => i.id === id);
     const header = itemConfig?.header ?? id;
@@ -445,28 +298,32 @@ export const Footer: React.FC = () => {
         break;
       }
       case 'model-name': {
-        const str = getDisplayString(model);
-        addCol(
-          id,
-          header,
-          () => <Text color={itemColor}>{str}</Text>,
-          str.length,
-        );
+        if (!hideModelInfo) {
+          const str = getDisplayString(model);
+          addCol(
+            id,
+            header,
+            () => <Text color={itemColor}>{str}</Text>,
+            str.length,
+          );
+        }
         break;
       }
       case 'context-used': {
-        addCol(
-          id,
-          header,
-          () => (
-            <ContextUsageDisplay
-              promptTokenCount={promptTokenCount}
-              model={model}
-              terminalWidth={terminalWidth}
-            />
-          ),
-          10,
-        );
+        if (!hideModelInfo && !hideContextPercentage) {
+          addCol(
+            id,
+            header,
+            () => (
+              <ContextUsageDisplay
+                promptTokenCount={promptTokenCount}
+                model={model}
+                terminalWidth={terminalWidth}
+              />
+            ),
+            10,
+          );
+        }
         break;
       }
       case 'quota': {
@@ -562,7 +419,7 @@ export const Footer: React.FC = () => {
     );
   }
 
-  // --- Width Fitting & Column Rendering Logic ---
+  // Width Fitting & Distribution Logic
   let currentWidth = 2;
   const columnsToRender: FooterColumn[] = [];
   let droppedAny = false;
@@ -607,6 +464,22 @@ export const Footer: React.FC = () => {
       header: '',
       element: <Text color={theme.ui.comment}>…</Text>,
     });
+  }
+
+  if (isExperimentalLayout) {
+    return (
+      <Box
+        width={terminalWidth}
+        height={2}
+        flexShrink={0}
+        flexDirection="row"
+        justifyContent="space-between"
+        paddingX={1}
+        overflow="hidden"
+      >
+        <FooterRow items={rowItems} showLabels={true} />
+      </Box>
+    );
   }
 
   return (

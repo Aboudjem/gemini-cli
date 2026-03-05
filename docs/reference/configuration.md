@@ -280,23 +280,10 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** Hide the footer from the UI
   - **Default:** `false`
 
-- **`ui.collapseDrawerDuringApproval`** (boolean):
-  - **Description:** Collapse the entire drawer (status, context, input, footer)
-    when a tool approval request is displayed.
-  - **Default:** `true`
-
-- **`ui.newFooterLayout`** (enum):
-  - **Description:** Use the new 2-row layout with inline tips.
-  - **Default:** `"legacy"`
-  - **Values:** `"legacy"`, `"new"`, `"new_divider_down"`
-
-- **`ui.showTips`** (boolean):
-  - **Description:** Show informative tips on the right side of the status line.
-  - **Default:** `true`
-
-- **`ui.showWit`** (boolean):
-  - **Description:** Show witty phrases while waiting.
-  - **Default:** `true`
+- **`ui.footerLayoutRefresh`** (boolean):
+  - **Description:** Enable the refreshed UX layout for the status bar and
+    footer.
+  - **Default:** `false`
 
 - **`ui.showMemoryUsage`** (boolean):
   - **Description:** Display memory usage information in the UI
@@ -338,6 +325,12 @@ their corresponding top-level category object in your `settings.json` file.
 - **`ui.showSpinner`** (boolean):
   - **Description:** Show the spinner during operations.
   - **Default:** `true`
+
+- **`ui.loadingPhrases`** (enum):
+  - **Description:** What to show while the model is working: tips, witty
+    comments, both, or nothing.
+  - **Default:** `"tips"`
+  - **Values:** `"tips"`, `"witty"`, `"all"`, `"off"`
 
 - **`ui.errorVerbosity`** (enum):
   - **Description:** Controls whether recoverable errors are hidden (low) or
