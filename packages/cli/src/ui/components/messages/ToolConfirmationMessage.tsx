@@ -31,12 +31,6 @@ import { theme } from '../../semantic-colors.js';
 import { useSettings } from '../../contexts/SettingsContext.js';
 import { keyMatchers, Command } from '../../keyMatchers.js';
 import { formatCommand } from '../../utils/keybindingUtils.js';
-import {
-  REDIRECTION_WARNING_NOTE_LABEL,
-  REDIRECTION_WARNING_NOTE_TEXT,
-  REDIRECTION_WARNING_TIP_LABEL,
-  REDIRECTION_WARNING_TIP_TEXT,
-} from '../../textConstants.js';
 import { AskUserDialog } from '../AskUserDialog.js';
 import { ExitPlanModeDialog } from '../ExitPlanModeDialog.js';
 import { WarningMessage } from './WarningMessage.js';
@@ -503,12 +497,14 @@ export const ToolConfirmationMessage: React.FC<
       if (containsRedirection) {
         // Calculate lines needed for Note and Tip
         const safeWidth = Math.max(terminalWidth, 1);
-        const noteLength =
-          REDIRECTION_WARNING_NOTE_LABEL.length +
-          REDIRECTION_WARNING_NOTE_TEXT.length;
-        const tipLength =
-          REDIRECTION_WARNING_TIP_LABEL.length +
-          REDIRECTION_WARNING_TIP_TEXT.length;
+        const noteLabel = 'Note: ';
+        const noteText =
+          'Command contains redirection which can be undesirable.';
+        const tipLabel = 'Tip:  '; // Padded to align with "Note: "
+        const tipText = `Toggle auto-edit (${formatCommand(Command.CYCLE_APPROVAL_MODE)}) to allow redirection in the future.`;
+
+        const noteLength = noteLabel.length + noteText.length;
+        const tipLength = tipLabel.length + tipText.length;
 
         const noteLines = Math.ceil(noteLength / safeWidth);
         const tipLines = Math.ceil(tipLength / safeWidth);
@@ -527,14 +523,14 @@ export const ToolConfirmationMessage: React.FC<
             <Box height={1} />
             <Box>
               <Text color={theme.text.primary}>
-                <Text bold>{REDIRECTION_WARNING_NOTE_LABEL}</Text>
-                {REDIRECTION_WARNING_NOTE_TEXT}
+                <Text bold>{noteLabel}</Text>
+                {noteText}
               </Text>
             </Box>
             <Box>
               <Text color={theme.border.default}>
-                <Text bold>{REDIRECTION_WARNING_TIP_LABEL}</Text>
-                {REDIRECTION_WARNING_TIP_TEXT}
+                <Text bold>{tipLabel}</Text>
+                {tipText}
               </Text>
             </Box>
           </>
