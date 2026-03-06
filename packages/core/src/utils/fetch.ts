@@ -6,6 +6,7 @@
 
 import { getErrorMessage, isNodeError } from './errors.js';
 import { URL } from 'node:url';
+import * as dns from 'node:dns';
 import { lookup } from 'node:dns/promises';
 import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
 
@@ -23,10 +24,12 @@ setGlobalDispatcher(
 const PRIVATE_IP_RANGES = [
   /^10\./,
   /^127\./,
+  /^0\.0\.0\.0$/,
   /^169\.254\./,
   /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
   /^192\.168\./,
   /^::1$/,
+  /^::$/,
   /^fc00:/,
   /^fe80:/,
 ];
@@ -76,11 +79,61 @@ export async function isPrivateIpAsync(url: string): Promise<boolean> {
 /**
  * Internal helper to check if an IP address string is in a private range.
  */
-function isAddressPrivate(address: string): boolean {
+export function isAddressPrivate(address: string): boolean {
   return (
     address === 'localhost' ||
     PRIVATE_IP_RANGES.some((range) => range.test(address))
   );
+}
+
+/**
+ * A custom DNS lookup implementation for undici agents that prevents
+ * connection to private IP ranges (SSRF protection).
+ */
+export function safeLookup(
+  hostname: string,
+  options: dns.LookupOptions | number | null | undefined,
+  callback: (
+    err: Error | null,
+    addresses: Array<{ address: string; family: number }>,
+  ) => void,
+): void {
+  // Use the callback-based dns.lookup to match undici's expected signature.
+  // We explicitly handle the 'all' option to ensure we get an array of addresses.
+  const lookupOptions =
+    typeof options === 'number' ? { family: options } : { ...options };
+  const finalOptions = { ...lookupOptions, all: true };
+
+  dns.lookup(hostname, finalOptions, (err, addresses) => {
+    if (err) {
+      callback(err, []);
+      return;
+    }
+
+    const addressArray = Array.isArray(addresses) ? addresses : [];
+
+    const isExplicitLocalhost =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1';
+
+    const filtered = addressArray.filter((addr) => 
+      // Allow if the hostname is explicitly localhost, otherwise block private ranges.
+       isExplicitLocalhost || !isAddressPrivate(addr.address)
+    );
+
+    if (filtered.length === 0 && addressArray.length > 0) {
+      callback(
+        new Error(
+          `Refusing to connect to private IP address resolved from ${hostname}`,
+        ),
+        [],
+      );
+      return;
+    }
+
+    callback(null, filtered);
+  });
 }
 
 export async function fetchWithTimeout(

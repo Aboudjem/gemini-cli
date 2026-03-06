@@ -26,7 +26,7 @@ import { GrpcTransportFactory } from '@a2a-js/sdk/client/grpc';
 import { v4 as uuidv4 } from 'uuid';
 import { Agent as UndiciAgent } from 'undici';
 import { getGrpcCredentials, normalizeAgentCard } from './a2aUtils.js';
-import { isPrivateIpAsync } from '../utils/fetch.js';
+import { isPrivateIpAsync, safeLookup } from '../utils/fetch.js';
 import { debugLogger } from '../utils/debugLogger.js';
 
 // Remote agents can take 10+ minutes (e.g. Deep Research).
@@ -35,6 +35,10 @@ const A2A_TIMEOUT = 1800000; // 30 minutes
 const a2aDispatcher = new UndiciAgent({
   headersTimeout: A2A_TIMEOUT,
   bodyTimeout: A2A_TIMEOUT,
+  connect: {
+    // SSRF protection at the connection level (mitigates DNS rebinding)
+    lookup: safeLookup,
+  },
 });
 const a2aFetch: typeof fetch = (input, init) =>
   // @ts-expect-error The `dispatcher` property is a Node.js extension to fetch not present in standard types.
@@ -275,7 +279,14 @@ export class A2AClientManager {
       if (parsedUrl.pathname.endsWith(standardPath)) {
         // Correctly split the URL into baseUrl and standard path
         path = standardPath;
-        baseUrl = url.substring(0, url.lastIndexOf(standardPath));
+        // Reconstruct baseUrl from parsed components to avoid issues with hashes or query params.
+        parsedUrl.pathname = parsedUrl.pathname.substring(
+          0,
+          parsedUrl.pathname.lastIndexOf(standardPath),
+        );
+        parsedUrl.search = '';
+        parsedUrl.hash = '';
+        baseUrl = parsedUrl.toString();
       }
     } catch (e) {
       throw new Error(`Invalid agent card URL: ${url}`, { cause: e });

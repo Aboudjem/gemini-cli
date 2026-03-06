@@ -38,7 +38,13 @@ vi.mock('../utils/debugLogger.js', () => ({
 }));
 
 vi.mock('node:dns/promises', () => ({
-  lookup: vi.fn().mockResolvedValue([{ address: '93.184.216.34' }]),
+  lookup: vi.fn().mockImplementation(async (hostname, options) => {
+    const addr = { address: '93.184.216.34', family: 4 };
+    if (options?.all) {
+      return [addr];
+    }
+    return addr;
+  }),
 }));
 
 describe('A2AClientManager', () => {
@@ -415,9 +421,11 @@ describe('A2AClientManager', () => {
     it('should throw if a domain resolves to a private IP (DNS SSRF protection)', async () => {
       const maliciousDomainUrl =
         'http://malicious.com/.well-known/agent-card.json';
-      vi.mocked(lookup).mockResolvedValueOnce([
-        { address: '10.0.0.1', family: 4 },
-      ]);
+       
+      vi.mocked(lookup).mockImplementationOnce(async () => 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         [{ address: '10.0.0.1', family: 4 }] as any
+      );
 
       await expect(
         manager.loadAgent('dns-ssrf-agent', maliciousDomainUrl),
@@ -461,6 +469,25 @@ describe('A2AClientManager', () => {
       expect(resolverInstance.resolve).toHaveBeenCalledWith(
         trickyUrl,
         undefined,
+      );
+    });
+
+    it('should correctly handle URLs with standardPath in the hash fragment', async () => {
+      const fragmentUrl =
+        'http://localhost:9001/.well-known/agent-card.json#.well-known/agent-card.json';
+      const resolverInstance = {
+        resolve: vi.fn().mockResolvedValue({ name: 'test' } as AgentCard),
+      };
+      vi.mocked(sdkClient.DefaultAgentCardResolver).mockReturnValue(
+        resolverInstance as unknown as sdkClient.DefaultAgentCardResolver,
+      );
+
+      await manager.loadAgent('fragment-agent', fragmentUrl);
+
+      // Should correctly ignore the hash fragment and use the path from the URL object
+      expect(resolverInstance.resolve).toHaveBeenCalledWith(
+        'http://localhost:9001/',
+        '.well-known/agent-card.json',
       );
     });
   });
