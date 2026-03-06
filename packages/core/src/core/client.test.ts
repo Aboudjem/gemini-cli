@@ -415,6 +415,7 @@ describe('Gemini Client (client.ts)', () => {
         getChatRecordingService: vi.fn().mockReturnValue({
           getConversation: vi.fn().mockReturnValue(null),
           getConversationFilePath: vi.fn().mockReturnValue(null),
+          recordCompressionPoint: vi.fn(),
         }),
       };
       client['chat'] = mockOriginalChat as GeminiChat;
@@ -649,6 +650,7 @@ describe('Gemini Client (client.ts)', () => {
       const mockRecordingService = {
         getConversation: vi.fn().mockReturnValue(mockConversation),
         getConversationFilePath: vi.fn().mockReturnValue(mockFilePath),
+        recordCompressionPoint: vi.fn(),
       };
       vi.mocked(mockOriginalChat.getChatRecordingService!).mockReturnValue(
         mockRecordingService as unknown as ChatRecordingService,
@@ -1535,6 +1537,7 @@ ${JSON.stringify(
         getChatRecordingService: vi.fn().mockReturnValue({
           getConversation: vi.fn(),
           getConversationFilePath: vi.fn(),
+          recordCompressionPoint: vi.fn(),
         }),
       } as unknown as GeminiChat;
 
@@ -1548,6 +1551,7 @@ ${JSON.stringify(
         getChatRecordingService: vi.fn().mockReturnValue({
           getConversation: vi.fn(),
           getConversationFilePath: vi.fn(),
+          recordCompressionPoint: vi.fn(),
         }),
       } as unknown as GeminiChat;
 
